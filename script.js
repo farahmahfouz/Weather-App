@@ -12,6 +12,9 @@ const humidityValueTxt = document.querySelector('.humidity-value-txt');
 const windValueTxt = document.querySelector('.wind-value-txt');
 const weatherSummaryImg = document.querySelector('.weather-summary-img');
 const currentDateTxt = document.querySelector('.current-date-txt');
+const forecastItemsContainer = document.querySelector(
+  '.forecast-item-container'
+);
 
 const apiKey = '12f32e7c58456099c95f859d3ca2c51d';
 
@@ -64,7 +67,6 @@ async function updateWeatherInfo(city) {
     return;
   }
 
-  console.log(weatherData);
   const {
     name: country,
     main: { temp, humidity },
@@ -80,7 +82,50 @@ async function updateWeatherInfo(city) {
   currentDateTxt.textContent = getCurrentDate();
   weatherSummaryImg.src = `assets/weather/${getWeatherIcon(id)}`;
 
+  await updateForecastsInfo(city);
   showDisplaySection(weatherInfoSection);
+}
+
+async function updateForecastsInfo(city) {
+  const forecastData = await getFetchData('forecast', city);
+  const timeTaken = '12:00:00';
+  const todayDate = new Date().toISOString().split('T')[0];
+
+  forecastItemsContainer.innerHTML = '';
+
+  forecastData.list.forEach(forecastWeather => {
+    if (
+      forecastWeather.dt_txt.includes(timeTaken) &&
+      !forecastWeather.dt_txt.includes(todayDate)
+    ) {
+      updateForecastItem(forecastWeather);
+    }
+  });
+}
+
+function updateForecastItem(weatherData) {
+  const {
+    dt_txt: date,
+    weather: [{ id }],
+    main: { temp },
+  } = weatherData;
+
+  const dateTaken = new Date(date);
+  const dateOption = {
+    day: '2-digit',
+    month: 'short',
+  };
+  const dateResult = dateTaken.toLocaleDateString('en-US', dateOption);
+  const forcastItem = `
+    <div class="forecast-item">
+        <h5 class="forecast-item-date regular-txt">${dateResult}</h5>
+        <img src="assets/weather/${getWeatherIcon(
+          id
+        )}" alt="thunder" class="forecast-item-img">
+        <h5 class="dorecast-item-temp">${Math.round(temp)} °C</h5>
+    </div>`;
+
+  forecastItemsContainer.insertAdjacentHTML('beforeend', forcastItem);
 }
 
 function showDisplaySection(section) {
